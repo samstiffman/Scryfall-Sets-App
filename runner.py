@@ -10,39 +10,17 @@ from tkinter import ttk, messagebox
 
 from ScrollableFrame import ScrollableFrame
 
-def clean_df(df: pd.DataFrame):
-    df = df.drop(labels = [
-    'content_warning', 'defense', 'mtgo_id', 'arena_id', 'cardmarket_id', 'lang', 'printed_type_line', 'printed_text', 'life_modifier', 'hand_modifier',
-'attraction_lights', 'color_indicator', 'layout', 'flavor_name',
-    'loyalty', 'preview.previewed_at', 'frame_effects', 'highres_image', 'card_faces', 'preview.source', 'preview.source_uri', 'security_stamp', 'released_at', 'tcgplayer_etched_id', 'variation_of',
-    'frame', 'full_art', 'artist', 'variation', 'reprint', 'promo', 
-    'edhrec_rank', 'penny_rank', 'power', 'toughness', 'printed_name', 'related_uris.tcgplayer_infinite_articles',
-    'related_uris.tcgplayer_infinite_decks', 'related_uris.gatherer', 'prices.eur', 'prices.eur_foil', 'prices.tix',
-    'legalities.predh', 'legalities.alchemy', 'legalities.oldschool', 'legalities.oathbreaker', 'legalities.standard', 'legalities.commander',
-    'legalities.brawl', 'legalities.alchemy', 'legalities.paupercommander', 'legalities.standardbrawl', 'legalities.penny',
-    'legalities.pioneer', 'legalities.modern', 'legalities.vintage', 'legalities.historic', 'legalities.future',
-    'digital', 'border_color', 'textless', 'booster', 'story_spotlight', 'card_back_id', 'artist_ids', 'illustration_id',
-    'image_uris.normal', 'image_uris.large', 'image_uris.png', 'image_uris.art_crop', 'image_uris.border_crop',
-    'legalities.timeless', 'legalities.gladiator', 'legalities.legacy', 'legalities.pauper', 'legalities.duel', 'legalities.premodern',
-    'scryfall_set_uri', 'set_name', 'set_type', 'set_uri', 'set_search_uri', 'rulings_uri', 'produced_mana', 'games', 'oracle_text', ''
-    'flavor_text', 'promo_types', 'watermark', 'prints_search_uri', 'foil', 'nonfoil', 'oversized', 'cmc', 'mana_cost', 'image_status', 'uri', 'scryfall_uri', 'object', 'multiverse_ids', 'tcgplayer_id', 'oracle_id',
-    'mtgo_foil_id', 'purchase_uris.cardhoarder', 'purchase_uris.tcgplayer', 'purchase_uris.cardmarket',
-    'related_uris.edhrec','all_parts', 'id', 'color_identity',
-    'reserved', 'finishes', 'game_changer', 'keywords', 'type_line', 'prices.usd_foil', 'prices.usd_etched', 'image_uris.small'], axis =1)
-    return df
-# CHANGE THIS TO YOUR PATH
+# Preprocessing 
 # DATA_PATH = Path('D://Repos/data/cards.json')
 # with open(DATA_PATH, 'r',  encoding='utf-8') as in_file:
 #     cards = json.load(in_file)
 
-# card_df = pd.json_normalize(cards)
-
-# df = clean_df(card_df)
-# print(df.columns)
-# df.to_csv('cards.csv')
-df = pd.read_csv('cards.csv')   
-# print(pd.json_normalize(cards))
+# df = pd.json_normalize(cards)
+# df = df[~df['type_line'].str.contains('Basic', na=False)]
+# df.to_csv('cards.csv', index = False, columns=['name', 'set', 'collector_number', 'rarity', 'colors', 'type_line', 'prices.usd'])
 # sys.exit(0)
+df = pd.read_csv('cards.csv')   
+
 
 def mapping(color: list):
     if isinstance(color, str):
@@ -127,16 +105,17 @@ def on_submit():
         if opt := var['option'].get():        # only process if checked
             row_series = pd.Series(r)
             if float(row_series.get('prices.usd')) < 1:
-                cheap_cards.append([opt , row_series.get("name").replace('\'', '').replace('"', ''), f'[{row_series.get("set").upper()}]', row_series.get("collector_number")])
+                cheap_cards.append([opt , row_series.get("name").replace('\'', '').replace('"', ''), f'[{row_series.get("set").upper()}]'])
             else:
-                expensive_cards.append([opt , row_series.get("name").replace('\'', '').replace('"', ''), f'[{row_series.get("set").upper()}]', row_series.get("collector_number")])
+                expensive_cards.append([opt , row_series.get("name").replace('\'', '').replace('"', ''), f'[{row_series.get("set").upper()}]'])
     print(expensive_cards)
     messagebox.showinfo("Done", f"All {len(expensive_cards) + len(cheap_cards)} cards have been processed.")
     with open(f'{row_series.get("set")}.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=' ', doublequote=False)
-        writer.writerows(cheap_cards)
-        writer.writerow(['', '', '', ''])
-        writer.writerows(expensive_cards)
+        for row in cheap_cards:
+            csvfile.write(f"{row[0]} {row[1]} {row[2]}\n")
+        csvfile.write("\n")
+        for row in expensive_cards:
+            csvfile.write(f"{row[0]} {row[1]} {row[2]}\n")
 
 
 
